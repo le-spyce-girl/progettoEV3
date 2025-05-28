@@ -1,8 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,21 +21,33 @@ d -> destra
 
 public class client extends JFrame implements KeyListener 
 {
-
     private Socket socket;
+    private DataInputStream dis;
     private DataOutputStream dos;
     private Map<Integer, KeyPressThread> keyPressThreads = new HashMap<>();
     private int currentSpeed = 500; // Velocità predefinita
     private int velocitaSinistra = 0;
     private int velocitaDestra = 0;
+    private JTextField ipTextField = new JTextField();
+    private JTextField portTextField = new JTextField();
+    private JLabel speedLabelSinistra;
+    private JLabel speedLabelDestra;
 
     public client() 
     {
         // Configura la finestra
         setTitle("EV3 Control");
-        setSize(400, 250);
+        setSize(450, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new GridLayout(4, 3));
+        setResizable(false);
+        setLayout(new BorderLayout(10, 10));
+        setLocationRelativeTo(null);
+        
+        //crea i vari panel
+        JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
+        JPanel ipPortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel speedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel controlPanel = new JPanel(new GridLayout(3, 3, 5, 5));
 
         // Crea i pulsanti
         JButton buttonForward = new JButton("W (Avanti)");
@@ -42,20 +56,40 @@ public class client extends JFrame implements KeyListener
         JButton buttonRight = new JButton("D (Destra)");
         JButton buttonStop = new JButton("Stop"); // Stop button
         JLabel velocitaSinistra = new JLabel();
+        JLabel velocitaDestra = new JLabel();
+        ipTextField = new JTextField("10.0.1.1");
+        portTextField = new JTextField("1317");
+        JButton connectButton = new JButton("Connetti");
         
         //crea i tasti per l'interfaccia
-        add(new JLabel()); //cella vuota
-        add(buttonForward);
-        add(new JLabel()); //cella vuota
-        add(buttonLeft);
-        add(buttonStop); //bottone per lo stop
-        add(buttonRight);
-        add(new JLabel()); //cella vuota
-        add(buttonBackward);
-        add(new JLabel()); //cella vuota
-        add(new JLabel());
-        add(new JLabel());
-        add(new JLabel());
+        ipPortPanel.add(new JLabel("IP Server:"));
+        ipPortPanel.add(ipTextField);
+        ipPortPanel.add(new JLabel("Porta:"));
+        ipPortPanel.add(portTextField);
+        ipPortPanel.add(connectButton);
+        
+        topPanel.add(ipPortPanel);
+        
+        speedPanel.add(new JLabel("Velocità: "));
+        speedLabelSinistra = new JLabel(String.valueOf(velocitaSinistra));
+        speedPanel.add(speedLabelSinistra);
+        speedLabelDestra = new JLabel(String.valueOf(velocitaDestra));
+        speedPanel.add(speedLabelDestra);
+        topPanel.add(speedPanel);
+        
+        add(topPanel, BorderLayout.NORTH);
+        
+        controlPanel.add(new JLabel()); //cella vuota
+        controlPanel.add(buttonForward);
+        controlPanel.add(new JLabel()); //cella vuota
+        controlPanel. add(buttonLeft);
+        controlPanel.add(buttonStop); //bottone per lo stop
+        controlPanel.add(buttonRight);
+        controlPanel.add(new JLabel()); //cella vuota
+        controlPanel.add(buttonBackward);
+        controlPanel.add(new JLabel()); //cella vuota
+        
+        add(controlPanel, BorderLayout.CENTER);
 
         // Configura i pulsanti
         buttonForward.addActionListener(createButtonActionListener(KeyEvent.VK_W));
@@ -71,18 +105,6 @@ public class client extends JFrame implements KeyListener
             }
         });
 
-        //connessione al server
-        try 
-        {
-            socket = new Socket("10.0.1.1", 1317); //connessione tcp 
-            dos = new DataOutputStream(socket.getOutputStream());
-        } 
-        catch (IOException ex) 
-        {
-            JOptionPane.showMessageDialog(this, "Errore di connessione: " + ex.getMessage(),
-                    "Errore", JOptionPane.ERROR_MESSAGE);
-        }
-
         //crea il listener per i tasti
         addKeyListener(this);
         setFocusable(true);
@@ -93,6 +115,42 @@ public class client extends JFrame implements KeyListener
 
         //prende il focus per usare i tasti
         requestFocusInWindow();
+        
+        connectButton.addActionListener(e -> connectToServer());
+    }
+    
+    private void connectToServer() {
+        String ip = ipTextField.getText().trim();
+        int port;
+        try 
+        {
+            port = Integer.parseInt(portTextField.getText().trim());
+        } 
+        catch (NumberFormatException ex) 
+        {
+            JOptionPane.showMessageDialog(this, "Porta non valida");
+            return;
+        }
+
+        try 
+        {
+            if (socket != null && !socket.isClosed()) 
+            {
+                socket.close();
+            }
+            socket = new Socket(ip, port);
+            dos = new DataOutputStream(socket.getOutputStream());
+            dis = new DataInputStream(socket.getInputStream());
+            JOptionPane.showMessageDialog(this, "Connesso a " + ip + ":" + port);
+            System.out.println("Connesso al server " + ip + ":" + port);
+        } 
+        catch (IOException e) 
+        {
+            JOptionPane.showMessageDialog(this, "Errore connessione: " + e.getMessage());
+            System.err.println("Errore connessione: " + e.getMessage());
+            socket = null;
+            dos = null;
+        }
     }
 
     private ActionListener createButtonActionListener(final int keyCode) 
@@ -202,6 +260,16 @@ public class client extends JFrame implements KeyListener
         {
             while (running) 
             {
+            	try 
+            	{
+					velocitaSinistra = dis.readInt();
+					velocitaDestra = dis.readInt();
+				} 
+            	catch (IOException e1) 
+            	{
+					e1.printStackTrace();
+				}
+            	//TODO modifica val della velocita nella interfaccia
                 switch (key) //switch invio comando al server
                 {
                     case KeyEvent.VK_W:
@@ -228,7 +296,7 @@ public class client extends JFrame implements KeyListener
                 }
                 try 
                 {
-                    Thread.sleep(10); //mantiene la velocita
+                    Thread.sleep(100); //mantiene la velocita
                 } 
                 catch (InterruptedException e) 
                 {
