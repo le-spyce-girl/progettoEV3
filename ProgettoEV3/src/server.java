@@ -13,7 +13,7 @@ import java.io.DataInputStream;
 
 public class server 
 {
-
+	private static Boolean ultima_direzione = true;
     private static EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(MotorPort.A);
     private static EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(MotorPort.B);
 
@@ -32,8 +32,8 @@ public class server
             while (true) 
             {
                 int command = dis.readInt();
-                int speed1 = dis.readInt(); //lettura velocita motore di sinistra
-                int speed2 = dis.readInt(); //lettura velocita motore di destra
+                int speed1 = dis.readInt(); //lettura velocita motore di destra
+                int speed2 = dis.readInt(); //lettura velocita motore di sinistra
                 if (command == -1) 
                 {
                     break;
@@ -54,29 +54,48 @@ public class server
     
     private static void executeCommand(int command, int speed1, int speed2) 
     {
-    	Boolean direzione = true;
         switch (command) {
             case 1: // Avanti
-                leftMotor.setSpeed(speed);
-                rightMotor.setSpeed(speed);
+                leftMotor.setSpeed(speed2);
+                rightMotor.setSpeed(speed1);
                 leftMotor.forward();
                 rightMotor.forward();
+                ultima_direzione = true;
                 break;
             case 2: // Indietro
-                leftMotor.setSpeed(speed);
-                rightMotor.setSpeed(speed);
+                leftMotor.setSpeed(speed2);
+                rightMotor.setSpeed(speed1);
                 leftMotor.backward();
                 rightMotor.backward();
+                ultima_direzione = false;
                 break;
             case 3: // Sinistra
-	            leftMotor.setSpeed(speed);
-	            rightMotor.setSpeed(speed);
+	            leftMotor.setSpeed(speed2);
+	            rightMotor.setSpeed(speed1);
+                if(ultima_direzione)
+                {
+                	rightMotor.forward();
+                    leftMotor.forward();
+                }
+                else
+                {
+                	leftMotor.backward();
+                    rightMotor.backward();
+                }
                 break;
             case 4: // Destra
-                leftMotor.setSpeed(speed);
-                rightMotor.setSpeed(speed);
-                rightMotor.forward();
-                leftMotor.forward();
+                leftMotor.setSpeed(speed2);
+                rightMotor.setSpeed(speed1);
+                if(ultima_direzione)
+                {
+                	rightMotor.forward();
+                    leftMotor.forward();
+                }
+                else
+                {
+                	leftMotor.backward();
+                    rightMotor.backward();
+                }
                 break;
             case 0: // Stop
                 leftMotor.stop(true);

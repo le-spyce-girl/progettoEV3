@@ -25,8 +25,10 @@ public class client extends JFrame implements KeyListener
     private Socket socket;
     private DataOutputStream dos;
     private Map<Integer, KeyPressThread> keyPressThreads = new HashMap<>();
-    private int currentSpeed = 1100; // Velocità predefinita
-    private int speedturn = 500;
+    private int currentSpeed = 500; // Velocità predefinita
+    private int speedturn = 250;
+    private int velocitaSinistra = 0;
+    private int velocitaDestra = 0;
 
     public client() 
     {
@@ -42,6 +44,8 @@ public class client extends JFrame implements KeyListener
         JButton btnBackward = new JButton("S (Indietro)");
         JButton btnRight = new JButton("D (Destra)");
         JButton btnStop = new JButton("Stop"); // Stop button
+        JButton btnVelocitaSinistra = new JButton(String.valueOf(velocitaSinistra));
+        JButton btnVelocitaDestra = new JButton(String.valueOf(velocitaDestra));
 
         //TODO inserire velocita nell'interfaccia per il movimmento
      	//TODO inserire posizione nell'interfaccia per il movimmento
@@ -56,16 +60,16 @@ public class client extends JFrame implements KeyListener
         add(new JLabel()); //cella vuota
         add(btnBackward);
         add(new JLabel()); //cella vuota
+        add(btnVelocitaSinistra);//velocita motore di sinistra
         add(new JLabel());
-        add(new JLabel());
-        add(new JLabel()); 
+        add(btnVelocitaDestra);//velociita motore di destra
 
         // Configura i pulsanti
         btnForward.addActionListener(createButtonActionListener(KeyEvent.VK_W));
         btnLeft.addActionListener(createButtonActionListener(KeyEvent.VK_A));
         btnBackward.addActionListener(createButtonActionListener(KeyEvent.VK_S));
         btnRight.addActionListener(createButtonActionListener(KeyEvent.VK_D));
-        btnStop.addActionListener(new ActionListener() 
+        btnStop.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent e) 
@@ -131,15 +135,15 @@ public class client extends JFrame implements KeyListener
         if (keyCode == KeyEvent.VK_1) 
         {
             //modalita normale
-            currentSpeed = 1100;
-            speedturn = 700;
+            currentSpeed = 500;
+            speedturn = 250;
             System.out.println("Velocità a: " + currentSpeed);
         } 
         else if (keyCode == KeyEvent.VK_2) 
         {
             //modalioota sport
-            currentSpeed = 5000;
-            speedturn = 1100;
+            currentSpeed = 1000;
+            speedturn = 500;
             System.out.println("Velocità a: " + currentSpeed);
         } 
         else 
@@ -210,22 +214,31 @@ public class client extends JFrame implements KeyListener
                 switch (key) //switch invio comando al server
                 {
                     case KeyEvent.VK_W:
-                        sendSpeedCommand(1, currentSpeed, currentSpeed);
+                        sendSpeedCommand(1, currentSpeed, currentSpeed); //destra , sinistra
+                        velocitaSinistra = currentSpeed;
+                        velocitaDestra = currentSpeed;
                         break;
                     case KeyEvent.VK_A:
-                        sendSpeedCommand(3, currentSpeed, speedturn);
+                        sendSpeedCommand(3, currentSpeed, speedturn);//destra , sinistra
+                        velocitaSinistra = speedturn;
+                        velocitaDestra = currentSpeed;
                         break;
                     case KeyEvent.VK_S:
-                        sendSpeedCommand(2, currentSpeed, currentSpeed);
+                        sendSpeedCommand(2, currentSpeed, currentSpeed);//destra , sinistra
+                        velocitaSinistra = currentSpeed;
+                        velocitaDestra = currentSpeed;
                         break;
                     case KeyEvent.VK_D:
-                        sendSpeedCommand(4, speedturn, currentSpeed);
+                        sendSpeedCommand(4, speedturn, currentSpeed);//destra , sinistra
+                        velocitaSinistra = currentSpeed;
+                        velocitaDestra = speedturn;
                         break;
                 }
                 try 
                 {
                     Thread.sleep(10); //mantiene la velocita
-                } catch (InterruptedException e) 
+                } 
+                catch (InterruptedException e) 
                 {
                     e.printStackTrace();
                 }
