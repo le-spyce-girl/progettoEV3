@@ -1,13 +1,12 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /*
 w -> avanti
@@ -22,16 +21,19 @@ d -> destra
 public class client extends JFrame implements KeyListener 
 {
     private Socket socket;
-    private DataInputStream dis;
+    private static DataInputStream dis;
     private DataOutputStream dos;
     private Map<Integer, KeyPressThread> keyPressThreads = new HashMap<>();
+    private Set<Integer> pressedKeys = new HashSet<Integer>();
     private int currentSpeed = 500; // Velocità predefinita
-    private int velocitaSinistra = 0;
-    private int velocitaDestra = 0;
+    private static int velocitaSinistra = 0;
+    private static int velocitaDestra = 0;
     private JTextField ipTextField = new JTextField();
     private JTextField portTextField = new JTextField();
-    private JLabel speedLabelSinistra;
-    private JLabel speedLabelDestra;
+    private int velocita = 0;
+    JPanel speedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    JLabel velocitaLabel = new JLabel();
+    JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
 
     public client() 
     {
@@ -44,9 +46,8 @@ public class client extends JFrame implements KeyListener
         setLocationRelativeTo(null);
         
         //crea i vari panel
-        JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
+        
         JPanel ipPortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JPanel speedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel controlPanel = new JPanel(new GridLayout(3, 3, 5, 5));
 
         // Crea i pulsanti
@@ -55,8 +56,6 @@ public class client extends JFrame implements KeyListener
         JButton buttonBackward = new JButton("S (Indietro)");
         JButton buttonRight = new JButton("D (Destra)");
         JButton buttonStop = new JButton("Stop"); // Stop button
-        JLabel velocitaSinistra = new JLabel();
-        JLabel velocitaDestra = new JLabel();
         ipTextField = new JTextField("10.0.1.1");
         portTextField = new JTextField("1317");
         JButton connectButton = new JButton("Connetti");
@@ -71,10 +70,8 @@ public class client extends JFrame implements KeyListener
         topPanel.add(ipPortPanel);
         
         speedPanel.add(new JLabel("Velocità: "));
-        speedLabelSinistra = new JLabel(String.valueOf(velocitaSinistra));
-        speedPanel.add(speedLabelSinistra);
-        speedLabelDestra = new JLabel(String.valueOf(velocitaDestra));
-        speedPanel.add(speedLabelDestra);
+        velocitaLabel = new JLabel(String.valueOf(velocita));
+        speedPanel.add(velocitaLabel);
         topPanel.add(speedPanel);
         
         add(topPanel, BorderLayout.NORTH);
@@ -192,6 +189,12 @@ public class client extends JFrame implements KeyListener
         else if (keyCode == KeyEvent.VK_2) 
         {
             //modalioota sport
+            currentSpeed = 750;
+            //System.out.println("Velocità a: " + currentSpeed);
+        } 
+        else if (keyCode == KeyEvent.VK_3) 
+        {
+            //modalioota sport
             currentSpeed = 1000;
             //System.out.println("Velocità a: " + currentSpeed);
         } 
@@ -205,7 +208,7 @@ public class client extends JFrame implements KeyListener
     public void keyReleased(KeyEvent e) 
     {
         int keyCode = e.getKeyCode();
-        if (keyCode != KeyEvent.VK_1 && keyCode != KeyEvent.VK_2) 
+        if (keyCode != KeyEvent.VK_1 && keyCode != KeyEvent.VK_2 && keyCode != KeyEvent.VK_3) 
         {
             stopKeyPressThread(keyCode);
         }
@@ -260,43 +263,90 @@ public class client extends JFrame implements KeyListener
         {
             while (running) 
             {
-            	try 
+            	boolean avanti;
+            	boolean sinistra;
+            	boolean dietro;
+            	boolean destra;
+            	if(key == KeyEvent.VK_W) 
             	{
-					velocitaSinistra = dis.readInt();
-					velocitaDestra = dis.readInt();
-				} 
-            	catch (IOException e1) 
+            		avanti = true;
+            	}
+            	else
             	{
-					e1.printStackTrace();
-				}
-            	//TODO modifica val della velocita nella interfaccia
-                switch (key) //switch invio comando al server
-                {
-                    case KeyEvent.VK_W:
-                        sendSpeedCommand(1, currentSpeed, currentSpeed); //destra , sinistra
-                        velocitaSinistra = currentSpeed;
-                        velocitaDestra = currentSpeed;
-                        //System.out.println("motore sx : " + velocitaSinistra + "\nmotore dx : " + velocitaDestra);
-                        break;
-                    case KeyEvent.VK_A:
-                        sendSpeedCommand(3, currentSpeed, currentSpeed/2);//destra , sinistra
-                        velocitaSinistra = currentSpeed/2;
-                        velocitaDestra = currentSpeed;
-                        break;
-                    case KeyEvent.VK_S:
-                        sendSpeedCommand(2, currentSpeed, currentSpeed);//destra , sinistra
-                        velocitaSinistra = currentSpeed;
-                        velocitaDestra = currentSpeed;
-                        break;
-                    case KeyEvent.VK_D:
-                        sendSpeedCommand(4, currentSpeed/2, currentSpeed);//destra , sinistra
-                        velocitaSinistra = currentSpeed;
-                        velocitaDestra = currentSpeed/2;
-                        break;
-                }
+            		avanti = false;
+            	}
+            	if(key == KeyEvent.VK_A) 
+            	{
+            		sinistra = true;
+            	}
+            	else
+            	{
+            		sinistra = false;
+            	}
+            	if(key == KeyEvent.VK_S) 
+            	{
+            		dietro = true;
+            	}
+            	else
+            	{
+            		dietro = false;
+            	}
+            	if(key == KeyEvent.VK_D) 
+            	{
+            		destra = true;
+            	}
+            	else
+            	{
+            		destra = false;
+            	}
+            	
+            	if(avanti)//avanti
+            	{
+            		 sendSpeedCommand(1, currentSpeed, currentSpeed); //destra , sinistra
+                     velocitaSinistra = currentSpeed;
+                     velocitaDestra = currentSpeed;
+            	}
+            	else if(sinistra) // Sinistra
+            	{
+            		sendSpeedCommand(3, currentSpeed, currentSpeed/2);//destra , sinistra
+                    velocitaSinistra = currentSpeed/2;
+                    velocitaDestra = currentSpeed;
+            	}
+            	else if(dietro)//indietro
+            	{
+            		sendSpeedCommand(2, currentSpeed, currentSpeed);//destra , sinistra
+                    velocitaSinistra = currentSpeed;
+                    velocitaDestra = currentSpeed;
+            	}
+            	else if(destra)//  Destra
+            	{
+            		sendSpeedCommand(4, currentSpeed/2, currentSpeed);//destra , sinistra
+                    velocitaSinistra = currentSpeed;
+                    velocitaDestra = currentSpeed/2;
+            	}
+                
                 try 
                 {
-                    Thread.sleep(100); //mantiene la velocita
+					velocitaSinistra = dis.readInt();
+					velocitaDestra = dis.readInt();
+					
+					//System.out.println(velocitaSinistra);
+					//System.out.println(velocitaDestra);
+					
+					velocita = ( velocitaSinistra + velocitaDestra ) / 2;
+					
+					//System.out.println(velocita);
+					velocitaLabel.setText(String.valueOf(velocita));
+					repaint();
+				} 
+                catch (IOException e1) 
+                {
+					e1.printStackTrace();
+				}
+                
+                try 
+                {
+                    Thread.sleep(10); //mantiene la velocita
                 } 
                 catch (InterruptedException e) 
                 {

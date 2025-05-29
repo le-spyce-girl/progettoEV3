@@ -16,6 +16,7 @@ import java.net.Socket;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
+
 public class server 
 {
 	private static DataOutputStream dos;
@@ -93,15 +94,14 @@ public class server
     private static void executeCommand(int command, int speed1, int speed2) 
     {
     	try 
-    	{
+		{
 			dos.writeInt(leftMotor.getSpeed());
 			dos.writeInt(rightMotor.getSpeed());
 		} 
-    	catch (IOException e) 
-    	{
+		catch (IOException e) 
+		{
 			e.printStackTrace();
 		}
-    	
         switch (command) {
             case 1: // Avanti
                 leftMotor.setSpeed(speed2);
@@ -117,8 +117,8 @@ public class server
                 rightMotor.backward();
                 ultima_direzione = false;
                 break;
-            case 3: // Sinistra
-	            leftMotor.setSpeed(speed2);
+            case 3: //Sinistra
+            	leftMotor.setSpeed(speed2);
 	            rightMotor.setSpeed(speed1);
                 if(ultima_direzione)
                 {
@@ -127,8 +127,8 @@ public class server
                 }
                 else
                 {
-                	leftMotor.backward();
-                    rightMotor.backward();
+                	rightMotor.backward();
+                    leftMotor.backward();
                 }
                 break;
             case 4: // Destra
@@ -141,8 +141,8 @@ public class server
                 }
                 else
                 {
-                	leftMotor.backward();
-                    rightMotor.backward();
+                	rightMotor.backward();
+                    leftMotor.backward();
                 }
                 break;
             case 0: // Stop
