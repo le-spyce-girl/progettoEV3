@@ -66,6 +66,37 @@ public class server
             
             bipThread.setDaemon(true);
             bipThread.start();
+            
+            Thread velocitaThread = new Thread(new Runnable() {
+        		@Override
+        		public void run() 
+        		{
+        			while(true)
+        			{
+        				try 
+        				{
+        					dos.writeInt(leftMotor.getRotationSpeed());
+        					dos.writeInt(rightMotor.getRotationSpeed());
+        				} 
+        				catch (IOException e) 
+        				{
+        					e.printStackTrace();
+        				}
+        				
+        				try 
+    					{
+    						Thread.sleep(1000);
+    					} 
+    					catch (InterruptedException e) 
+    					{
+    						e.printStackTrace();
+    					}
+        			}
+        		}
+            });
+            
+            velocitaThread.setDaemon(true);
+            velocitaThread.start();
            
             DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
             while (true) 
@@ -93,15 +124,6 @@ public class server
     
     private static void executeCommand(int command, int speed1, int speed2) 
     {
-    	try 
-		{
-			dos.writeInt(leftMotor.getSpeed());
-			dos.writeInt(rightMotor.getSpeed());
-		} 
-		catch (IOException e) 
-		{
-			e.printStackTrace();
-		}
         switch (command) {
             case 1: // Avanti
                 leftMotor.setSpeed(speed2);

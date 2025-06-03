@@ -1,4 +1,7 @@
 import javax.swing.*;
+
+import lejos.hardware.Sound;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -30,10 +33,10 @@ public class client extends JFrame implements KeyListener
     private static int velocitaDestra = 0;
     private JTextField ipTextField = new JTextField();
     private JTextField portTextField = new JTextField();
-    private int velocita = 0;
-    JPanel speedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-    JLabel velocitaLabel = new JLabel();
-    JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
+    private static int velocita = 0;
+    private static JPanel speedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    private static JLabel velocitaLabel = new JLabel();
+    private JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
 
     public client() 
     {
@@ -116,7 +119,8 @@ public class client extends JFrame implements KeyListener
         connectButton.addActionListener(e -> connectToServer());
     }
     
-    private void connectToServer() {
+    private void connectToServer() 
+    {
         String ip = ipTextField.getText().trim();
         int port;
         try 
@@ -140,6 +144,9 @@ public class client extends JFrame implements KeyListener
             dis = new DataInputStream(socket.getInputStream());
             JOptionPane.showMessageDialog(this, "Connesso a " + ip + ":" + port);
             System.out.println("Connesso al server " + ip + ":" + port);
+            
+            velocitaThread.setDaemon(true);
+            velocitaThread.start();
         } 
         catch (IOException e) 
         {
@@ -327,25 +334,6 @@ public class client extends JFrame implements KeyListener
                 
                 try 
                 {
-					velocitaSinistra = dis.readInt();
-					velocitaDestra = dis.readInt();
-					
-					//System.out.println(velocitaSinistra);
-					//System.out.println(velocitaDestra);
-					
-					velocita = ( velocitaSinistra + velocitaDestra ) / 2;
-					
-					//System.out.println(velocita);
-					velocitaLabel.setText(String.valueOf(velocita));
-					repaint();
-				} 
-                catch (IOException e1) 
-                {
-					e1.printStackTrace();
-				}
-                
-                try 
-                {
                     Thread.sleep(10); //mantiene la velocita
                 } 
                 catch (InterruptedException e) 
@@ -361,6 +349,43 @@ public class client extends JFrame implements KeyListener
         }
     }
 
+    static Thread velocitaThread = new Thread(new Runnable() {
+		@Override
+		public void run() 
+		{
+			while(true)
+			{
+				try 
+                {
+					velocitaSinistra = dis.readInt();
+					velocitaDestra = dis.readInt();
+					
+					//System.out.println(velocitaSinistra);
+					//System.out.println(velocitaDestra);
+					
+					velocita = ( velocitaSinistra + velocitaDestra ) / 2;
+					
+					//System.out.println(velocita);
+					velocitaLabel.setText(String.valueOf(velocita));
+					speedPanel.repaint();
+					
+					try 
+					{
+						Thread.sleep(1000);
+					} 
+					catch (InterruptedException e) 
+					{
+						e.printStackTrace();
+					}
+				} 
+                catch (IOException e1) 
+                {
+					e1.printStackTrace();
+				}
+			}
+		}
+    });
+    
     public static void main(String[] args) 
     {
         SwingUtilities.invokeLater(new Runnable() 
