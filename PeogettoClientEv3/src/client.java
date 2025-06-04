@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.Scanner;
+import java.awt.Color;
 
 /*
 w -> avanti
@@ -38,6 +41,7 @@ public class client extends JFrame implements KeyListener
     private static JLabel velocitaLabel = new JLabel();
     private JPanel topPanel = new JPanel(new GridLayout(2, 1, 5, 5));
 
+
     public client() 
     {
         // Configura la finestra
@@ -63,19 +67,61 @@ public class client extends JFrame implements KeyListener
         portTextField = new JTextField("1317");
         JButton connectButton = new JButton("Connetti");
         
+        Color nero = new Color(0, 0, 0);
+        Color viola = new Color(255, 0, 255);
+        Color rosso = new Color(255, 0, 0);
+        Color grigio = new Color(50, 50, 50);
+        
+        buttonForward.setBackground(nero);
+        buttonForward.setForeground(viola);
+        buttonLeft.setBackground(nero);
+        buttonLeft.setForeground(viola);
+        buttonBackward.setBackground(nero);
+        buttonBackward.setForeground(viola);
+        buttonRight.setBackground(nero);
+        buttonRight.setForeground(viola);
+        buttonStop.setBackground(rosso);
+        buttonStop.setForeground(nero);
+        connectButton.setBackground(nero);
+        connectButton.setForeground(viola);
+        
+        ipPortPanel.setBackground(grigio);
+        ipPortPanel.setForeground(viola);
+        controlPanel.setBackground(grigio);
+        controlPanel.setForeground(viola);
+        
+        ipTextField.setBackground(grigio);
+        ipTextField.setBackground(viola);
+        portTextField.setBackground(grigio);
+        portTextField.setBackground(viola);
+        
+        JLabel ipServer = new JLabel("IP Server:");
+        ipServer.setForeground(viola);
+        JLabel portaServer = new JLabel("Porta:");
+        portaServer.setForeground(viola);
+        
         //crea i tasti per l'interfaccia
-        ipPortPanel.add(new JLabel("IP Server:"));
+        ipPortPanel.add(ipServer);
         ipPortPanel.add(ipTextField);
-        ipPortPanel.add(new JLabel("Porta:"));
+        ipPortPanel.add(portaServer);
         ipPortPanel.add(portTextField);
         ipPortPanel.add(connectButton);
         
         topPanel.add(ipPortPanel);
         
-        speedPanel.add(new JLabel("Velocità: "));
+        
+        JLabel velocitaLabel = new JLabel("Velocità: ");
+        velocitaLabel.setForeground(viola);
+        speedPanel.add(velocitaLabel);
+        
         velocitaLabel = new JLabel(String.valueOf(velocita));
+        velocitaLabel.setForeground(viola);
+        
         speedPanel.add(velocitaLabel);
         topPanel.add(speedPanel);
+        
+        speedPanel.setBackground(grigio);
+        speedPanel.setForeground(viola);
         
         add(topPanel, BorderLayout.NORTH);
         
@@ -90,6 +136,7 @@ public class client extends JFrame implements KeyListener
         controlPanel.add(new JLabel()); //cella vuota
         
         add(controlPanel, BorderLayout.CENTER);
+        setBackground(grigio);
 
         // Configura i pulsanti
         buttonForward.addActionListener(createButtonActionListener(KeyEvent.VK_W));
@@ -147,6 +194,9 @@ public class client extends JFrame implements KeyListener
             
             velocitaThread.setDaemon(true);
             velocitaThread.start();
+            
+            salvaVelocitaThread.setDaemon(true);
+            salvaVelocitaThread.start();
         } 
         catch (IOException e) 
         {
@@ -155,6 +205,23 @@ public class client extends JFrame implements KeyListener
             socket = null;
             dos = null;
         }
+        
+        try 
+    	{
+			File myObj = new File("velocita.txt");
+			if (myObj.createNewFile()) 
+			{
+				System.out.println("File created: " + myObj.getName());
+			} 
+			else 
+			{
+				System.out.println("File already exists.");
+			}
+		} 
+		catch (IOException e) 
+		{
+		  e.printStackTrace();
+		}
     }
 
     private ActionListener createButtonActionListener(final int keyCode) 
@@ -202,7 +269,7 @@ public class client extends JFrame implements KeyListener
         else if (keyCode == KeyEvent.VK_3) 
         {
             //modalioota sport
-            currentSpeed = 1000;
+            currentSpeed = 1100;
             //System.out.println("Velocità a: " + currentSpeed);
         } 
         else 
@@ -331,7 +398,7 @@ public class client extends JFrame implements KeyListener
                     velocitaSinistra = currentSpeed;
                     velocitaDestra = currentSpeed/2;
             	}
-                
+            	
                 try 
                 {
                     Thread.sleep(10); //mantiene la velocita
@@ -349,6 +416,45 @@ public class client extends JFrame implements KeyListener
         }
     }
 
+    static Thread salvaVelocitaThread = new Thread(new Runnable() {
+		@Override
+		public void run() 
+		{
+			FileWriter myWriter = null;
+        	try 
+			{
+				myWriter = new FileWriter("velocita.txt");
+			} 
+			catch (IOException e2) 
+			{
+				e2.printStackTrace();
+			}
+			while(true)
+			{
+				try 
+            	{
+            		LocalDateTime ora = LocalDateTime.now();
+            	    myWriter.write(velocita + "::::" + ora +  ";\n");
+            	    myWriter.flush();
+            	    //System.out.println("scrittura avvenuta");
+					
+					try 
+					{
+						Thread.sleep(250);
+					} 
+					catch (InterruptedException e) 
+					{
+						e.printStackTrace();
+					}
+				} 
+                catch (IOException e1) 
+                {
+					e1.printStackTrace();
+				}
+			}
+		}
+    });
+    
     static Thread velocitaThread = new Thread(new Runnable() {
 		@Override
 		public void run() 
